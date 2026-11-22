@@ -640,18 +640,50 @@ void setup() {
   }
 
   // Lightweight Roxy dashboard served from LittleFS.
+  // Keep access checks consistent with the original local passcode/HMAC policy.
   server->on("/roxy", HTTP_GET, []() {
-    File uiFile = LittleFS.open("/roxy.html", "r");
-    if (!uiFile) {
-      server->send(404, "text/plain", "Roxy UI not found. Upload the LittleFS data folder.");
-      return;
+    String signature = server->arg("auth");
+    String epid = server->arg("epid");
+    String mid = server->arg("mid");
+    String timestamp = server->arg("time");
+    IPAddress remoteIP = server->client().remoteIP();
+
+    if (!allowLocalBypass(remoteIP) && !isPasscodeValid(server->arg("pass"))) {
+      sendCorsHeaders();
+      server->send(401, "text/plain", "Unauthorized, invalid passcode");
+    } else if (strlen(user_id) != 0 && !validateHMAC(epid, mid, timestamp, signature, remoteIP)) {
+      sendCorsHeaders();
+      server->send(401, "text/plain", "Unauthorized, HMAC security authentication");
+    } else {
+      File uiFile = LittleFS.open("/roxy.html", "r");
+      if (!uiFile) {
+        server->send(404, "text/plain", "Roxy UI not found. Upload the LittleFS data folder.");
+        return;
+      }
+      server->streamFile(uiFile, "text/html");
+      uiFile.close();
     }
-    server->streamFile(uiFile, "text/html");
-    uiFile.close();
   });
 
   // Read-only status endpoint used by the Roxy dashboard and future clients.
   server->on("/api/status", HTTP_GET, []() {
+    String signature = server->arg("auth");
+    String epid = server->arg("epid");
+    String mid = server->arg("mid");
+    String timestamp = server->arg("time");
+    IPAddress remoteIP = server->client().remoteIP();
+
+    if (!allowLocalBypass(remoteIP) && !isPasscodeValid(server->arg("pass"))) {
+      sendCorsHeaders();
+      server->send(401, "text/plain", "Unauthorized, invalid passcode");
+      return;
+    }
+    if (strlen(user_id) != 0 && !validateHMAC(epid, mid, timestamp, signature, remoteIP)) {
+      sendCorsHeaders();
+      server->send(401, "text/plain", "Unauthorized, HMAC security authentication");
+      return;
+    }
+
     StaticJsonDocument<256> status;
     status["device"] = "Roxy IR Controller";
     status["connected"] = (WiFi.status() == WL_CONNECTED);
