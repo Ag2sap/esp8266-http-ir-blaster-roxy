@@ -46,7 +46,9 @@
 async function loadStatus(){
   const wifi=document.getElementById('wifi');
   try{
-    const response=await fetch('/api/status',{cache:'no-store'});
+    const pass = new URLSearchParams(window.location.search).get('pass');
+    const statusUrl = '/api/status' + (pass ? '?pass=' + encodeURIComponent(pass) : '');
+    const response=await fetch(statusUrl,{cache:'no-store'});
     if(!response.ok) throw new Error('HTTP '+response.status);
     const data=await response.json();
     wifi.textContent=data.connected?'Terhubung':'Terputus';
