@@ -25,3 +25,13 @@ jobs:
         run: pio run -e nodemcuv2
       - name: Build LittleFS image
         run: pio run -e nodemcuv2 -t buildfs
+
+      - name: Upload firmware and LittleFS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: roxy-esp8266-build
+          path: |
+            .pio/build/nodemcuv2/firmware.bin
+            .pio/build/nodemcuv2/littlefs.bin
+          if-no-files-found: error
+          retention-days: 14
