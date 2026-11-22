@@ -65,6 +65,8 @@ This fork adds a lightweight Roxy dashboard while keeping the original IR Contro
 
 - Open the dashboard at `http://<device-ip>:<port>/roxy`.
 - The dashboard reads Wi-Fi and device information from `/api/status`.
+- The dashboard and status API apply the firmware's existing local passcode/HMAC access policy; the default local-network bypass remains controlled by `bypassLocalAuth`.
+- If local bypass is disabled and a passcode is configured, include it when opening the dashboard: `http://<device-ip>:<port>/roxy?pass=<passcode>`. The dashboard forwards it to the status API.
 - The original root page (`/`), IR capture page (`/received`), and IR command endpoints remain available.
 
 Wi-Fi connection on first boot:
