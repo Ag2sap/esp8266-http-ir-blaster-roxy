@@ -684,7 +684,7 @@ void setup() {
       return;
     }
 
-    StaticJsonDocument<256> status;
+    StaticJsonDocument<384> status;
     status["device"] = "Roxy IR Controller";
     status["connected"] = (WiFi.status() == WL_CONNECTED);
     status["hostname"] = host_name;
