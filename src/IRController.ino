@@ -639,6 +639,33 @@ void setup() {
     Serial.println("MDNS http service added. Hostname is set to " + String(host_name) + ".local:" + String(port));
   }
 
+  // Lightweight Roxy dashboard served from LittleFS.
+  server->on("/roxy", HTTP_GET, []() {
+    File uiFile = LittleFS.open("/roxy.html", "r");
+    if (!uiFile) {
+      server->send(404, "text/plain", "Roxy UI not found. Upload the LittleFS data folder.");
+      return;
+    }
+    server->streamFile(uiFile, "text/html");
+    uiFile.close();
+  });
+
+  // Read-only status endpoint used by the Roxy dashboard and future clients.
+  server->on("/api/status", HTTP_GET, []() {
+    StaticJsonDocument<256> status;
+    status["device"] = "Roxy IR Controller";
+    status["connected"] = (WiFi.status() == WL_CONNECTED);
+    status["hostname"] = host_name;
+    status["ssid"] = WiFi.SSID();
+    status["ip"] = WiFi.localIP().toString();
+    status["rssi"] = WiFi.RSSI();
+    status["free_heap"] = ESP.getFreeHeap();
+
+    String payload;
+    serializeJson(status, payload);
+    server->send(200, "application/json", payload);
+  });
+
   // Configure the server
   server->on("/json", []() { // JSON handler for more complicated IR blaster routines
     Serial.println("Connection received endpoint '/json'");
