@@ -58,6 +58,35 @@ After flashing, you can use the device like so:
 2. Forward whichever port your ESP8266 web server is running on so that it can be accessed from outside your local network, this is critical since Alexa commands come from Amazon's servers, not locally
 3. Download the IR Controller Alexa skill and start creating your devices. Each IR command will require a URL which can be saved. Choose whichever functionality you desire. Information on creating the URLs can be found below
 
+Roxy Dashboard (early draft)
+---------------
+
+This fork adds a lightweight Roxy dashboard while keeping the original IR Controller pages and command endpoints available.
+
+- Open the dashboard at `http://<device-ip>:<port>/roxy`.
+- The dashboard reads Wi-Fi and device information from `/api/status`.
+- The original root page (`/`), IR capture page (`/received`), and IR command endpoints remain available.
+
+Wi-Fi connection on first boot:
+
+1. Power on the ESP8266. If no saved Wi-Fi credentials are available, WiFiManager starts an access point named `IR Controller Configuration`.
+2. Connect a phone to that access point.
+3. Open `http://192.168.4.1` if the configuration page does not open automatically.
+4. Select the home 2.4 GHz Wi-Fi network and enter its password.
+5. After the ESP8266 joins the home network, find its IP address in the serial monitor (115200 baud) and open `http://<device-ip>:<port>/roxy`.
+
+The WiFiManager configuration portal uses its own setup page; the Roxy dashboard is served after the ESP8266 joins the home network.
+
+PlatformIO build and upload (NodeMCU V3 / ESP-12E):
+
+```sh
+pio run -e nodemcuv2
+pio run -e nodemcuv2 -t upload
+pio run -e nodemcuv2 -t uploadfs
+```
+
+Run `uploadfs` after firmware upload to copy `data/roxy.html` into LittleFS. The configured web port is shown in the serial monitor; the default is 80.
+
 Alexa Setup
 ---------------
 1. Download the `IR Controller` skill from the Alexa skill store
