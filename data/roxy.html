@@ -2,64 +2,294 @@
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <title>Roxy IR Controller</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090d17">
+  <title>Roxy Universal Remote</title>
   <style>
-    :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--text:#edf4ff;--muted:#9aabc2;--accent:#38bdf8;--ok:#34d399}
-    *{box-sizing:border-box}body{margin:0;padding:24px 16px;font:15px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
-    main{max-width:560px;margin:auto}.brand{display:flex;align-items:center;gap:12px;margin:8px 0 24px}.logo{width:44px;height:44px;border-radius:14px;background:#12334a;color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:20px}
-    h1{font-size:22px;margin:0}.sub{color:var(--muted);font-size:13px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}
-    h2{font-size:16px;margin:0 0 14px}.status{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.status:last-child{border:0}.key{color:var(--muted)}.value{font-weight:600;text-align:right;overflow-wrap:anywhere}
-    .online{color:var(--ok)}button{width:100%;border:0;border-radius:12px;padding:12px;background:var(--accent);color:#062033;font-weight:700;font-size:15px;margin-top:14px}
-    ol{padding-left:20px;margin:0;color:var(--muted)}li{padding:5px 0}code{color:var(--accent);background:#0b1727;padding:2px 6px;border-radius:6px}
-    footer{text-align:center;color:var(--muted);font-size:12px;margin:22px 0}
+    :root{
+      color-scheme:dark;
+      --bg:#090d17;--surface:#121a29;--surface-2:#192437;--line:#26354b;
+      --text:#f4f7fc;--muted:#94a3b8;--accent:#58c4ee;--accent-2:#a5e7ff;
+      --green:#38d99b;--red:#ff667d;--shadow:0 16px 38px rgba(0,0,0,.28)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;padding:20px 15px calc(28px + env(safe-area-inset-bottom));font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -15%,#18324a 0,transparent 52%),var(--bg);color:var(--text)}
+    button{font:inherit;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .app{width:min(100%,440px);margin:0 auto}
+    .top{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 18px}
+    .brand{display:flex;align-items:center;gap:11px}
+    .logo{width:43px;height:43px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#1d5270,#143044);border:1px solid #34718e;color:#c7f2ff;font-size:22px;font-weight:900;box-shadow:0 8px 22px #0005}
+    h1{font-size:19px;letter-spacing:.02em;margin:0;font-weight:800}
+    .subtitle{font-size:11px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-top:2px}
+    .universal-tag{border:1px solid #28516a;background:#10283a;color:#a9e9ff;border-radius:99px;padding:7px 10px;font-size:10px;font-weight:800;letter-spacing:.1em}
+    .remote{background:linear-gradient(180deg,#172235,#101827);border:1px solid #2b3a50;border-radius:30px;padding:19px 17px 20px;box-shadow:var(--shadow),inset 0 1px #ffffff0b}
+    .device-line{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 0 17px}
+    .device-chip{font-size:10px;letter-spacing:.04em;color:#b9c7d9;border:1px solid #314258;background:#111b2b;border-radius:99px;padding:6px 9px}
+    .section-label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8092aa;font-weight:800;margin:18px 3px 10px}
+    .power-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .key{border:1px solid #34445c;background:linear-gradient(180deg,#25344a,#1a273a);color:var(--text);border-radius:15px;min-height:53px;padding:10px 8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:750;box-shadow:0 5px 0 #0b111d,0 8px 15px #0002;transition:transform .08s,border-color .15s,filter .15s}
+    .key:active{transform:translateY(3px);box-shadow:0 2px 0 #0b111d,0 4px 9px #0002;filter:brightness(1.16)}
+    .key:disabled{opacity:.55;cursor:wait}
+    .key svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .key.power{background:linear-gradient(180deg,#632b3a,#3e202d);border-color:#8a4053;color:#ffdce3}
+    .key.power svg{color:#ff8296}
+    .key.primary{background:linear-gradient(180deg,#15516b,#12394f);border-color:#287c9d;color:#e0f8ff}
+    .key.secondary{min-height:45px;font-size:13px}
+    .key.soft{background:#131f30;border-color:#2b3b51;color:#c8d5e5;box-shadow:0 4px 0 #0b111d}
+    .volume-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .volume{min-height:58px;font-size:14px}
+    .volume .symbol{font-size:22px;line-height:1;color:var(--accent-2);font-weight:500}
+    .dpad{width:min(100%,252px);margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,67px);gap:7px}
+    .dpad .key{min-height:0;border-radius:18px;padding:0}
+    .dpad .key svg{width:25px;height:25px}
+    .dpad .center{background:linear-gradient(145deg,#1b526b,#14384e);border-color:#327b9a;color:#d8f6ff;font-size:13px;letter-spacing:.08em}
+    .dpad .empty{visibility:hidden}
+    .nav-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:15px}
+    .utility-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .more-toggle{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:18px;border:1px solid #34455d;background:#101a29;color:#b8c8db;border-radius:14px;padding:13px;font-size:13px;font-weight:750}
+    .more-toggle .plus{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:#1c3449;color:#9de4ff;font-size:17px}
+    .more-panel{display:none;margin-top:13px;padding:14px;border:1px solid #2b3b51;border-radius:18px;background:#0e1725}
+    .more-panel.open{display:block;animation:reveal .18s ease-out}
+    @keyframes reveal{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+    .number-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .number-grid .key{min-height:49px;font-size:17px}
+    .media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+    .media-grid .key{min-height:45px;font-size:11px}
+    .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,16px);opacity:0;pointer-events:none;z-index:5;width:max-content;max-width:calc(100vw - 32px);padding:11px 15px;border-radius:12px;background:#17283a;border:1px solid #36516c;color:#eaf6ff;font-size:13px;font-weight:650;box-shadow:var(--shadow);transition:opacity .18s,transform .18s}
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+    .toast.error{background:#3b202b;border-color:#854052;color:#ffe2e7}
+    .sending{opacity:.7;filter:saturate(.7)}
+    @media(max-width:360px){body{padding-left:10px;padding-right:10px}.remote{padding:15px 12px}.dpad{grid-template-rows:repeat(3,60px)}.key{font-size:13px}}
   </style>
 </head>
 <body>
-<main>
-  <header class="brand">
-    <div class="logo">R</div>
-    <div><h1>Roxy IR Controller</h1><div class="sub">ESP8266 · Local network</div></div>
+<main class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">R</div>
+      <div><h1>ROXY</h1><div class="subtitle">Universal Remote</div></div>
+    </div>
+    <div class="universal-tag">3 DEVICES</div>
   </header>
-  <section class="card">
-    <h2>Status perangkat</h2>
-    <div class="status"><span class="key">Koneksi Wi-Fi</span><span class="value online" id="wifi">Memuat…</span></div>
-    <div class="status"><span class="key">Nama perangkat</span><span class="value" id="hostname">—</span></div>
-    <div class="status"><span class="key">Jaringan</span><span class="value" id="ssid">—</span></div>
-    <div class="status"><span class="key">Alamat IP</span><span class="value" id="ip">—</span></div>
-    <div class="status"><span class="key">Sinyal Wi-Fi</span><span class="value" id="rssi">—</span></div>
-    <button type="button" onclick="loadStatus()">Perbarui status</button>
+
+  <section class="remote" aria-label="Remote universal Roxy">
+    <div class="device-line" aria-label="Perangkat yang dikendalikan">
+      <span class="device-chip">TV POLYTRON</span>
+      <span class="device-chip">HG680P</span>
+      <span class="device-chip">MATRIX</span>
+    </div>
+
+    <div class="power-row">
+      <button class="key power" data-action="power-all" aria-label="Power semua perangkat">
+        <svg viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M5.6 5.6a9 9 0 1 0 12.8 0"/></svg>
+        POWER ALL
+      </button>
+      <button class="key soft" data-action="mute" aria-label="Mute TV dan HG680P">
+        <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m17 9 5 6m0-6-5 6"/></svg>
+        MUTE
+      </button>
+    </div>
+
+    <div class="section-label">Volume · TV + HG680P</div>
+    <div class="volume-row">
+      <button class="key primary volume" data-action="volume-down"><span class="symbol">−</span> VOLUME</button>
+      <button class="key primary volume" data-action="volume-up"><span class="symbol">+</span> VOLUME</button>
+    </div>
+
+    <div class="section-label">Navigasi · HG680P + Matrix</div>
+    <div class="dpad" aria-label="Navigasi">
+      <span class="empty"></span>
+      <button class="key" data-action="up" aria-label="Atas"><svg viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></svg></button>
+      <span class="empty"></span>
+      <button class="key" data-action="left" aria-label="Kiri"><svg viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></svg></button>
+      <button class="key center" data-action="ok">OK</button>
+      <button class="key" data-action="right" aria-label="Kanan"><svg viewBox="0 0 24 24"><path d="m10 5 7 7-7 7"/></svg></button>
+      <span class="empty"></span>
+      <button class="key" data-action="down" aria-label="Bawah"><svg viewBox="0 0 24 24"><path d="m5 10 7 7 7-7"/></svg></button>
+      <span class="empty"></span>
+    </div>
+
+    <div class="nav-row">
+      <button class="key secondary soft" data-action="back">BACK</button>
+      <button class="key secondary soft" data-action="home">HOME</button>
+      <button class="key secondary soft" data-action="menu">MENU</button>
+    </div>
+    <div class="utility-row" style="margin-top:9px">
+      <button class="key secondary soft" data-action="info">INFO</button>
+      <button class="key secondary soft" data-action="tv-av">TV / AV</button>
+      <button class="key secondary soft" data-action="epg">EPG</button>
+    </div>
+
+    <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false" aria-controls="morePanel">
+      <span class="plus" id="toggleIcon">+</span>
+      <span id="toggleText">Tampilkan tombol lainnya</span>
+    </button>
+    <div class="more-panel" id="morePanel" aria-hidden="true">
+      <div class="section-label" style="margin-top:0">Papan angka</div>
+      <div class="number-grid">
+        <button class="key" data-action="digit-1">1</button>
+        <button class="key" data-action="digit-2">2</button>
+        <button class="key" data-action="digit-3">3</button>
+        <button class="key" data-action="digit-4">4</button>
+        <button class="key" data-action="digit-5">5</button>
+        <button class="key" data-action="digit-6">6</button>
+        <button class="key" data-action="digit-7">7</button>
+        <button class="key" data-action="digit-8">8</button>
+        <button class="key" data-action="digit-9">9</button>
+        <span></span>
+        <button class="key" data-action="digit-0">0</button>
+        <span></span>
+      </div>
+      <div class="section-label">Kontrol tambahan</div>
+      <div class="media-grid">
+        <button class="key secondary soft" data-action="channel-down">CH −</button>
+        <button class="key secondary soft" data-action="channel-up">CH +</button>
+        <button class="key secondary soft" data-action="recall">RECALL</button>
+        <button class="key secondary soft" data-action="rewind">REW</button>
+        <button class="key secondary soft" data-action="play-pause">PLAY / PAUSE</button>
+        <button class="key secondary soft" data-action="fast-forward">FF</button>
+        <button class="key secondary soft" data-action="stop">STOP</button>
+        <button class="key secondary soft" data-action="before">BEFORE</button>
+        <button class="key secondary soft" data-action="next">NEXT</button>
+        <button class="key secondary soft" data-action="txt">TXT</button>
+        <button class="key secondary soft" data-action="set">SET</button>
+        <button class="key secondary soft" data-action="app">APP</button>
+      </div>
+    </div>
   </section>
-  <section class="card">
-    <h2>Menghubungkan ke Wi-Fi rumah</h2>
-    <ol>
-      <li>Nyalakan ESP8266. Jika belum memiliki konfigurasi Wi-Fi, perangkat akan membuat jaringan <code>IR Controller Configuration</code>.</li>
-      <li>Sambungkan HP ke jaringan tersebut.</li>
-      <li>Buka <code>http://192.168.4.1</code>, pilih Wi-Fi rumah 2,4 GHz, lalu masukkan password Wi-Fi.</li>
-      <li>Setelah tersambung, buka kembali halaman Roxy menggunakan alamat IP yang tampil di dashboard.</li>
-    </ol>
-  </section>
-  <footer>Roxy · IR controller dashboard awal</footer>
 </main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <script>
-async function loadStatus(){
-  const wifi=document.getElementById('wifi');
-  try{
-    const pass = new URLSearchParams(window.location.search).get('pass');
-    const statusUrl = '/api/status' + (pass ? '?pass=' + encodeURIComponent(pass) : '');
-    const response=await fetch(statusUrl,{cache:'no-store'});
-    if(!response.ok) throw new Error('HTTP '+response.status);
-    const data=await response.json();
-    wifi.textContent=data.connected?'Terhubung':'Terputus';
-    wifi.className='value '+(data.connected?'online':'');
-    document.getElementById('hostname').textContent=data.hostname||'Roxy-IR';
-    document.getElementById('ssid').textContent=data.ssid||'—';
-    document.getElementById('ip').textContent=data.ip||'—';
-    document.getElementById('rssi').textContent=data.connected?data.rssi+' dBm':'—';
-  }catch(error){wifi.textContent='Tidak dapat membaca status';wifi.className='value';}
-}
-loadStatus();
+  // Command values are kept exactly as captured. The blue HG680P keys are intentionally excluded.
+  const NEC = (data, length, out) => ({data:data, type:"nec", length:length, out:out || 1});
+  const RAW = (data, khz, out) => ({data:data, type:"raw", khz:khz || 38, out:out || 1});
+
+  const CODES = {
+    hg: {
+      power:"D7E84B1B", mute:"F377C5B7", tvAv:"D8C4AEFE", set:"A23C94BF",
+      home:"7EC31EF7", app:"930FFB7", back:"EE4ECCFB", info:"F63C8657",
+      up:"EE886D7F", down:"EC213597", right:"3EC3FC1B", left:"E35A7437",
+      ok:"73CEC633", fastForward:"511DBB", rewind:"20FE4DBB",
+      playPause:"52A3D41F", stop:"E318261B", before:"F0C41643", next:"8E5D3EBB",
+      volumeUp:"9716BE3F", volumeDown:"3D9AE3F7", channelUp:"D538681B",
+      channelDown:"A3C8EDDB", digits:{
+        "0":"FA3F159F","1":"8AB3679B","2":"12209C7B","3":"305D6FF",
+        "4":"51E43D1B","5":"AB91951F","6":"FF9186B7","7":"F076C13B",
+        "8":"8C22657B","9":"E5CFBD7F"
+      }, txt:"2A89195F"
+    },
+    tv: {
+      power:"EACDE79B", volumeUp:"5DCB4362", volumeDown:"DC7425F",
+      channelUp:"ED76CF6E", channelDown:"14E18333", okMenu:"D856B7DF",
+      mute:"690B78D4"
+    },
+    matrix: {
+      power:"A1DE21DE", mute:"A1DE29D6", up:"A1DE817E", down:"A1DE11EE",
+      right:"A1DE41BE", left:"A1DE09F6", ok:"A1DE9966", menu:"A1DEC936",
+      epg:"A1DE4AB5", back:"A1DE6996", info:"A1DE01FE", recall:"A1DEC13E",
+      digits:{
+        "1":"A1DEE11E","2":"A1DE619E","3":"A1DEA15E","4":"A1DED12E",
+        "5":"A1DE51AE","6":"A1DE916E","7":"A1DEF10E","8":"A1DE718E",
+        "9":"A1DEB14E","0":"A1DE49B6"
+      }
+    }
+  };
+
+  // The Polytron Power key has an exact RAW capture. Other Polytron keys retain
+  // their captured 57-bit metadata and are sent through the existing NEC sender
+  // until their individual RAW captures are added to the project.
+  const TV_POWER_RAW = [8466,4256,472,1640,472,1642,474,586,470,588,472,586,470,1644,474,586,472,586,472,4282,470,588,472,1666,448,1644,472,1642,472,588,470,586,472,588,472,586,470,24350,8440,4282,472,1644,472,1642,474,588,470,586,470,588,470,1646,468,588,470,588,472,4282,472,586,470,1644,472,1644,470,1642,474,588,468,590,470,590,468,592,468,24348,8440,4284,472,1644,470,1646,468,588,470,590,470,586,472,1644,470,590,494,562,470,4284,470,590,470,1644,470,1644,470,1644,470,588,470,586,472,588,494,564,470];
+
+  const hg = (key) => NEC(CODES.hg[key], 34, 1);
+  const tv = (key) => NEC(CODES.tv[key], 57, 1);
+  const matrix = (key) => NEC(CODES.matrix[key], 32, 1);
+  const ACTIONS = {
+    "power-all": () => [RAW(TV_POWER_RAW,38,1),hg("power"),matrix("power")],
+    "mute": () => [tv("mute"),hg("mute")],
+    "volume-up": () => [tv("volumeUp"),hg("volumeUp")],
+    "volume-down": () => [tv("volumeDown"),hg("volumeDown")],
+    "up": () => [hg("up"),matrix("up")],
+    "down": () => [hg("down"),matrix("down")],
+    "left": () => [hg("left"),matrix("left")],
+    "right": () => [hg("right"),matrix("right")],
+    "ok": () => [hg("ok"),matrix("ok")],
+    "back": () => [hg("back"),matrix("back")],
+    "home": () => [hg("home")],
+    "menu": () => [hg("set"),matrix("menu")],
+    "info": () => [hg("info"),matrix("info")],
+    "tv-av": () => [hg("tvAv")],
+    "epg": () => [matrix("epg")],
+    "channel-up": () => [hg("channelUp"),matrix("up")],
+    "channel-down": () => [hg("channelDown"),matrix("down")],
+    "recall": () => [matrix("recall")],
+    "rewind": () => [hg("rewind")],
+    "play-pause": () => [hg("playPause")],
+    "fast-forward": () => [hg("fastForward")],
+    "stop": () => [hg("stop")],
+    "before": () => [hg("before")],
+    "next": () => [hg("next")],
+    "txt": () => [hg("txt")],
+    "set": () => [hg("set")],
+    "app": () => [hg("app")]
+  };
+  Object.keys(CODES.hg.digits).forEach(function(digit){
+    ACTIONS["digit-"+digit] = function(){
+      return [NEC(CODES.hg.digits[digit],34,1),NEC(CODES.matrix.digits[digit],32,1)];
+    };
+  });
+
+  const toast = document.getElementById("toast");
+  let toastTimer;
+  let busy = false;
+  function notify(message, isError){
+    toast.textContent = message;
+    toast.className = "toast show" + (isError ? " error" : "");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){toast.className="toast";},2600);
+  }
+  async function transmit(action, button){
+    if(busy) return;
+    const build = ACTIONS[action];
+    if(!build){notify("Perintah belum tersedia",true);return;}
+    const commands = build().filter(Boolean);
+    if(!commands.length){notify("Kode tombol belum tersedia",true);return;}
+    busy = true;
+    document.querySelectorAll(".key").forEach(function(key){key.disabled=true;});
+    if(button) button.classList.add("sending");
+    try{
+      const params = new URLSearchParams();
+      params.set("plain",JSON.stringify(commands));
+      const pass = new URLSearchParams(window.location.search).get("pass");
+      if(pass) params.set("pass",pass);
+      const response = await fetch("/json?"+params.toString(),{method:"GET",cache:"no-store"});
+      if(!response.ok) throw new Error("HTTP "+response.status);
+      notify("Perintah dikirim · "+commands.length+" sinyal");
+    }catch(error){
+      notify("Gagal mengirim perintah: "+error.message,true);
+    }finally{
+      busy = false;
+      document.querySelectorAll(".key").forEach(function(key){key.disabled=false;});
+      if(button) button.classList.remove("sending");
+    }
+  }
+
+  document.querySelector(".remote").addEventListener("click",function(event){
+    const button = event.target.closest("button[data-action]");
+    if(!button) return;
+    transmit(button.dataset.action,button);
+  });
+
+  const moreToggle = document.getElementById("moreToggle");
+  const morePanel = document.getElementById("morePanel");
+  moreToggle.addEventListener("click",function(){
+    const open = !morePanel.classList.contains("open");
+    morePanel.classList.toggle("open",open);
+    morePanel.setAttribute("aria-hidden",String(!open));
+    moreToggle.setAttribute("aria-expanded",String(open));
+    document.getElementById("toggleIcon").textContent = open ? "−" : "+";
+    document.getElementById("toggleText").textContent = open ? "Sembunyikan tombol lainnya" : "Tampilkan tombol lainnya";
+  });
 </script>
 </body>
 </html>
