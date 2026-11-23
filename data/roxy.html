@@ -375,6 +375,7 @@
     if(!slot)return;
     const device=slot.dataset.device,type=slot.querySelector(".slot-type").value,rawText=slot.querySelector(".slot-data").value.trim();
     const slots=Object.assign({},updated[editingAction]||{});
+    let hgNecFrame="";
     if(!rawText){slots[device]=null;}
     else if(type==="raw"){
       const values=rawText.split(/[\s,]+/).filter(Boolean).map(Number);
@@ -386,7 +387,6 @@
       let storedHex=hex.toUpperCase();
       let hgNecCommand=false;
       let storedLength=Number(slot.querySelector(".slot-length").value)||32;
-      let hgNecFrame="";
       // A 1-byte NEC entry on the HG680P slot means a remote command byte,
       // not a complete NEC frame. Let the firmware compose 00 FF CMD ~CMD.
       if(device==="hg" && storedHex.length<=2){
