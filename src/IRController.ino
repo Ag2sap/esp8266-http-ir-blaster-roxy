@@ -760,12 +760,20 @@ void setup() {
     }
     size_t written = serializeJson(keymapDoc, tempFile);
     tempFile.close();
-    if (written == 0 || !LittleFS.rename("/keymap.tmp", "/keymap.json")) {
+    bool movedOld = false;
+    if (written > 0 && LittleFS.exists("/keymap.json")) {
+      LittleFS.remove("/keymap.bak");
+      movedOld = LittleFS.rename("/keymap.json", "/keymap.bak");
+    }
+    bool movedNew = (written > 0) && LittleFS.rename("/keymap.tmp", "/keymap.json");
+    if (!movedNew) {
       LittleFS.remove("/keymap.tmp");
+      if (movedOld) LittleFS.rename("/keymap.bak", "/keymap.json");
       sendCorsHeaders();
       server->send(500, "application/json", "{\\"error\\":\\"write_failed\\"}");
       return;
     }
+    if (movedOld) LittleFS.remove("/keymap.bak");
     sendCorsHeaders();
     server->send(200, "application/json", "{\\"saved\\":true}");
   });
