@@ -198,6 +198,11 @@
     }
   };
 
+  // UNKNOWN decoders are transmitted from their RAW timing captures.
+  const hg = (key) => RAW(RAW_CODES.hg[key], 38, 1);
+  const tv = (key) => RAW(RAW_CODES.tv[key], 38, 1);
+  const matrix = (key) => NEC(CODES.matrix[key], 32, 1);
+
   // UNKNOWN decoders use captured RAW timings; Matrix uses NEC 32-bit.
   const ACTIONS = {
     "power-all": () => [tv("power"),hg("power"),matrix("power")],
