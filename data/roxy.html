@@ -22,6 +22,8 @@
     h1{font-size:19px;letter-spacing:.02em;margin:0;font-weight:800}
     .subtitle{font-size:11px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-top:2px}
     .universal-tag{border:1px solid #28516a;background:#10283a;color:#a9e9ff;border-radius:99px;padding:7px 10px;font-size:10px;font-weight:800;letter-spacing:.1em}
+    .header-edit-toggle{border:1px solid #36536c;background:#13283a;color:#bdeeff;border-radius:99px;padding:9px 12px;font-size:11px;font-weight:800;white-space:nowrap}
+    .header-edit-toggle.active{background:#24506a;border-color:#4b9bc0}
     .remote{background:linear-gradient(180deg,#172235,#101827);border:1px solid #2b3a50;border-radius:30px;padding:19px 17px 20px;box-shadow:var(--shadow),inset 0 1px #ffffff0b}
     .device-line{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 0 17px}
     .device-chip{font-size:10px;letter-spacing:.04em;color:#b9c7d9;border:1px solid #314258;background:#111b2b;border-radius:99px;padding:6px 9px}
@@ -93,7 +95,7 @@
       <div class="logo">R</div>
       <div><h1>ROXY</h1><div class="subtitle">Universal Remote</div></div>
     </div>
-    <div class="universal-tag">REMOTE SELECT</div>
+    <button class="header-edit-toggle" id="editKeymapToggle" type="button">Edit Tombol</button>
   </header>
 
   <section class="remote" aria-label="Remote universal Roxy">
@@ -154,7 +156,6 @@
       <button class="key secondary soft icon-key" data-action="next" aria-label="Next" title="Next"><svg viewBox="0 0 24 24"><path d="M19 5v14M5 5l10 7-10 7V5Z"/></svg></button>
     </div>
 
-    <div class="edit-bar"><button class="edit-toggle" id="editKeymapToggle" type="button">Atur Keymap</button></div>
 
     <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false" aria-controls="morePanel">
       <span class="plus" id="toggleIcon">+</span>
@@ -359,11 +360,11 @@
     type.value=command&&command.type?command.type.toLowerCase():"raw";
     const khz=document.createElement("input");khz.type="number";khz.min="1";khz.max="100";khz.value=command&&command.khz?command.khz:38;khz.className="slot-khz";khz.placeholder="kHz";khz.style.cssText="background:#0b1421;color:#f4f7fc;border:1px solid #344861;border-radius:8px;padding:8px";
     const length=document.createElement("input");length.type="number";length.min="1";length.max="64";length.value=command&&command.length?command.length:32;length.className="slot-length";length.placeholder="Bit";length.style.cssText=khz.style.cssText;
-    const data=document.createElement("textarea");data.className="slot-data";data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":"Kode NEC hexadecimal";data.value=commandText(command);
+    const data=document.createElement("textarea");data.className="slot-data";data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":(device==="hg"?"Command HG680P (mis. 4A) atau frame NEC 32-bit":"Kode NEC hexadecimal");data.value=commandText(command);
     const clear=document.createElement("button");clear.type="button";clear.textContent="Kosongkan slot";clear.style.cssText="grid-column:1/-1;background:#34202b;color:#ffdce3;border:1px solid #704052;border-radius:8px;padding:8px";
     clear.addEventListener("click",function(){data.value="";status.textContent="Kosong";});
     fields.appendChild(type);fields.appendChild(type.value==="raw"?khz:length);fields.appendChild(data);fields.appendChild(clear);
-    type.addEventListener("change",function(){fields.replaceChild(type.value==="raw"?khz:length,fields.children[1]);data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":"Kode NEC hexadecimal";});
+    type.addEventListener("change",function(){fields.replaceChild(type.value==="raw"?khz:length,fields.children[1]);data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":(device==="hg"?"Command HG680P (mis. 4A) atau frame NEC 32-bit":"Kode NEC hexadecimal");});
     slot.appendChild(head);slot.appendChild(fields);keymapSlots.appendChild(slot);
     document.getElementById("keymapStatus").textContent="Perubahan hanya untuk "+deviceNames[device]+" pada tombol ini.";
     keymapModal.classList.add("open");
@@ -382,13 +383,26 @@
     }else{
       const hex=rawText.replace(/^0x/i,"").replace(/\\s/g,"");
       if(!/^[0-9a-f]+$/i.test(hex)){document.getElementById("keymapStatus").textContent="Kode NEC harus berupa hexadecimal.";return;}
-      slots[device]={type:"nec",data:hex.toUpperCase(),length:Number(slot.querySelector(".slot-length").value)||32,out:1};
+      let storedHex=hex.toUpperCase();
+      let hgNecCommand=false;
+      let storedLength=Number(slot.querySelector(".slot-length").value)||32;
+      let hgNecFrame="";
+      // A 1-byte NEC entry on the HG680P slot means a remote command byte,
+      // not a complete NEC frame. Let the firmware compose 00 FF CMD ~CMD.
+      if(device==="hg" && storedHex.length<=2){
+        storedHex=storedHex.padStart(2,"0");
+        hgNecCommand=true;
+        storedLength=8;
+        const inverse=(parseInt(storedHex,16)^0xFF).toString(16).padStart(2,"0").toUpperCase();
+        hgNecFrame="00FF"+storedHex+inverse;
+      }
+      slots[device]={type:"nec",data:storedHex,length:storedLength,hgnec:hgNecCommand,out:1};
     }
     updated[editingAction]=slots;
     try{
       const response=await fetch("/api/keymap"+passQuery(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(updated)});
       if(!response.ok)throw new Error("HTTP "+response.status);
-      keymapOverrides=updated;keymapModal.classList.remove("open");notify("Keymap tersimpan");
+      keymapOverrides=updated;keymapModal.classList.remove("open");notify(hgNecFrame?"Keymap tersimpan · NEC "+hgNecFrame:"Keymap tersimpan");
     }catch(error){document.getElementById("keymapStatus").textContent="Gagal menyimpan keymap: "+error.message;}
   }
 
@@ -445,7 +459,7 @@
   document.getElementById("editKeymapToggle").addEventListener("click",function(){
     editKeymapMode=!editKeymapMode;
     this.classList.toggle("active",editKeymapMode);
-    this.textContent=editKeymapMode?"Pilih tombol untuk diedit · Selesai":"Atur Keymap";
+    this.textContent=editKeymapMode?"Selesai Edit":"Edit Tombol";
     notify(editKeymapMode?"Mode edit aktif: pilih tombol":"Mode edit selesai");
   });
   document.getElementById("keymapCancel").addEventListener("click",function(){keymapModal.classList.remove("open");});
