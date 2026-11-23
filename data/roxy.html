@@ -25,6 +25,7 @@
     .remote{background:linear-gradient(180deg,#172235,#101827);border:1px solid #2b3a50;border-radius:30px;padding:19px 17px 20px;box-shadow:var(--shadow),inset 0 1px #ffffff0b}
     .device-line{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 0 17px}
     .device-chip{font-size:10px;letter-spacing:.04em;color:#b9c7d9;border:1px solid #314258;background:#111b2b;border-radius:99px;padding:6px 9px}
+    .device-select{min-width:160px;border:1px solid #3a7794;background:#10283a;color:#dff7ff;border-radius:99px;padding:8px 13px;font:700 12px system-ui;outline:none}
     .section-label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8092aa;font-weight:800;margin:18px 3px 10px}
     .power-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
     .key{border:1px solid #34445c;background:linear-gradient(180deg,#25344a,#1a273a);color:var(--text);border-radius:15px;min-height:53px;padding:10px 8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:750;box-shadow:0 5px 0 #0b111d,0 8px 15px #0002;transition:transform .08s,border-color .15s,filter .15s}
@@ -92,20 +93,21 @@
       <div class="logo">R</div>
       <div><h1>ROXY</h1><div class="subtitle">Universal Remote</div></div>
     </div>
-    <div class="universal-tag">3 DEVICES</div>
+    <div class="universal-tag">REMOTE SELECT</div>
   </header>
 
   <section class="remote" aria-label="Remote universal Roxy">
-    <div class="device-line" aria-label="Perangkat yang dikendalikan">
-      <span class="device-chip">TV</span>
-      <span class="device-chip">HG680P</span>
-      <span class="device-chip">MATRIX</span>
+    <div class="device-line" aria-label="Pilih remote yang dikendalikan">
+      <label for="remoteSelect" class="device-chip">REMOTE AKTIF</label>
+      <select id="remoteSelect" class="device-select" aria-label="Pilih remote">
+        <option value="hg">HG680P</option><option value="tv">TV Polytron</option><option value="matrix">MATRIX</option>
+      </select>
     </div>
 
     <div class="power-row">
-      <button class="key power" data-action="power-all" aria-label="Power semua perangkat">
+      <button class="key power" data-action="power-all" aria-label="Power remote terpilih">
         <svg viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M5.6 5.6a9 9 0 1 0 12.8 0"/></svg>
-        POWER ALL
+        POWER
       </button>
       <button class="key soft" data-action="mute" aria-label="Mute">
         <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m17 9 5 6m0-6-5 6"/></svg>
@@ -113,13 +115,13 @@
       </button>
     </div>
 
-    <div class="section-label">Volume · TV + HG680P</div>
+    <div class="section-label" id="volumeLabel">Volume</div>
     <div class="volume-row">
       <button class="key primary volume" data-action="volume-down"><span class="symbol">−</span> VOLUME</button>
       <button class="key primary volume" data-action="volume-up"><span class="symbol">+</span> VOLUME</button>
     </div>
 
-    <div class="section-label">Navigasi · HG680P + Matrix</div>
+    <div class="section-label" id="navigationLabel">Navigasi</div>
     <div class="dpad" aria-label="Navigasi">
       <span class="empty"></span>
       <button class="key" data-action="up" aria-label="Atas"><svg viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></svg></button>
@@ -139,7 +141,7 @@
     </div>
     <div class="utility-row" style="margin-top:9px">
       <button class="key secondary soft" data-action="info">INFO</button>
-      <button class="key secondary soft" data-action="tv-av" disabled title="RAW TV/AV belum tersedia">TV / AV*</button>
+      <button class="key secondary soft" data-action="tv-av" title="TV / AV · belum ada kode, dapat diedit">TV / AV*</button>
       <button class="key secondary soft" data-action="epg">EPG</button>
     </div>
 
@@ -180,7 +182,7 @@
         <button class="key secondary soft" data-action="channel-up">CH +</button>
         <button class="key secondary soft" data-action="recall">RECALL</button>
         <button class="key secondary soft" data-action="txt">TXT</button>
-        <button class="key secondary soft" data-action="set" disabled title="RAW SET belum tersedia">SET*</button>
+        <button class="key secondary soft" data-action="set" title="SET · belum ada kode, dapat diedit">SET*</button>
         <button class="key secondary soft" data-action="app">APP</button>
       </div>
     </div>
@@ -189,7 +191,7 @@
 <div class="keymap-modal" id="keymapModal" role="dialog" aria-modal="true" aria-labelledby="keymapTitle">
   <div class="keymap-card">
     <h2 id="keymapTitle">Atur Keymap</h2>
-    <p class="keymap-help" id="keymapHelp">Pilih kode untuk setiap perangkat. Slot kosong tidak mengirim sinyal.</p>
+    <p class="keymap-help" id="keymapHelp">Editor mengikuti remote yang sedang dipilih. Slot kosong tidak mengirim sinyal sampai diisi.</p>
     <div id="keymapSlots"></div>
     <div class="modal-actions">
       <button type="button" class="cancel" id="keymapCancel">Batal</button>
@@ -304,15 +306,23 @@
     const pass = new URLSearchParams(window.location.search).get("pass");
     return pass ? "?pass="+encodeURIComponent(pass) : "";
   }
+  let selectedDevice = "hg";
+  function defaultCommand(action,device){
+    const devices=ACTION_DEVICES[action] || [];
+    const index=devices.indexOf(device);
+    if(index<0 || !ACTIONS[action]) return null;
+    return ACTIONS[action]()[index] || null;
+  }
   function actionCommands(action){
-    const defaultDevices = ACTION_DEVICES[action] || [];
-    const base = (ACTIONS[action] ? ACTIONS[action]() : []);
-    return ALL_DEVICES.map(function(device){
-      if(keymapOverrides[action] && Object.prototype.hasOwnProperty.call(keymapOverrides[action],device))
-        return keymapOverrides[action][device];
-      const defaultIndex = defaultDevices.indexOf(device);
-      return defaultIndex >= 0 ? (base[defaultIndex] || null) : null;
-    }).filter(Boolean);
+    if(keymapOverrides[action] && Object.prototype.hasOwnProperty.call(keymapOverrides[action],selectedDevice))
+      return keymapOverrides[action][selectedDevice] ? [keymapOverrides[action][selectedDevice]] : [];
+    const command=defaultCommand(action,selectedDevice);
+    return command ? [command] : [];
+  }
+  function updateRemoteLabels(){
+    const names={tv:"TV Polytron",hg:"HG680P",matrix:"MATRIX"};
+    document.getElementById("volumeLabel").textContent="Volume · "+names[selectedDevice];
+    document.getElementById("navigationLabel").textContent="Navigasi · "+names[selectedDevice];
   }
   async function loadKeymap(){
     try{
@@ -334,93 +344,52 @@
     return Array.isArray(command.data) ? command.data.join(",") : String(command.data || "");
   }
   function openKeymapEditor(action){
-    editingAction = action;
-    const defaultDevices = ACTION_DEVICES[action] || [];
-    const devices = ALL_DEVICES;
-    const original = (ACTIONS[action] ? ACTIONS[action]() : []);
-    keymapSlots.innerHTML = "";
-    document.getElementById("keymapTitle").textContent = "Keymap · "+action.toUpperCase().replace(/-/g," ");
-    devices.forEach(function(device,index){
-      const defaultIndex = defaultDevices.indexOf(device);
-      const command = keymapOverrides[action] && Object.prototype.hasOwnProperty.call(keymapOverrides[action],device)
-        ? keymapOverrides[action][device] : (defaultIndex >= 0 ? (original[defaultIndex] || null) : null);
-      const slot = document.createElement("section");
-      slot.className = "slot-editor";
-      slot.dataset.device = device;
-      const head = document.createElement("div");
-      head.className = "slot-head";
-      head.textContent = deviceNames[device];
-      const status = document.createElement("span");
-      status.className = "slot-empty";
-      status.textContent = command ? "Terisi" : "Kosong";
-      head.appendChild(status);
-      const fields = document.createElement("div");
-      fields.className = "slot-fields";
-      const type = document.createElement("select");
-      type.className = "slot-type";
-      [["raw","RAW"],["nec","NEC"]].forEach(function(pair){
-        const option=document.createElement("option");option.value=pair[0];option.textContent=pair[1];type.appendChild(option);
-      });
-      type.value = command && command.type ? command.type.toLowerCase() : "raw";
-      const khz = document.createElement("input");
-      khz.type="number";khz.min="1";khz.max="100";khz.value=command && command.khz ? command.khz : 38;
-      khz.className="slot-khz";khz.placeholder="kHz";
-      khz.style.cssText="background:#0b1421;color:#f4f7fc;border:1px solid #344861;border-radius:8px;padding:8px";
-      const length = document.createElement("input");
-      length.type="number";length.min="1";length.max="64";length.value=command && command.length ? command.length : 32;
-      length.className="slot-length";length.placeholder="Bit";
-      length.style.cssText=khz.style.cssText;
-      const data = document.createElement("textarea");
-      data.className="slot-data";data.placeholder="Kode NEC hex atau durasi RAW dipisahkan koma";
-      data.value=commandText(command);
-      const clear = document.createElement("button");
-      clear.type="button";clear.textContent="Kosongkan slot";
-      clear.style.cssText="grid-column:1/-1;background:#34202b;color:#ffdce3;border:1px solid #704052;border-radius:8px;padding:8px";
-      clear.addEventListener("click",function(){data.value="";status.textContent="Kosong";});
-      fields.appendChild(type);fields.appendChild(type.value==="raw"?khz:length);fields.appendChild(data);fields.appendChild(clear);
-      type.addEventListener("change",function(){
-        fields.replaceChild(type.value==="raw"?khz:length,fields.children[1]);
-        data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":"Kode NEC hexadecimal";
-      });
-      slot.appendChild(head);slot.appendChild(fields);keymapSlots.appendChild(slot);
-    });
-    document.getElementById("keymapStatus").textContent = "Kosongkan slot untuk menonaktifkan perangkat pada tombol ini.";
+    editingAction=action;
+    const device=selectedDevice;
+    const command=keymapOverrides[action] && Object.prototype.hasOwnProperty.call(keymapOverrides[action],device)
+      ? keymapOverrides[action][device] : defaultCommand(action,device);
+    keymapSlots.innerHTML="";
+    document.getElementById("keymapTitle").textContent="Keymap · "+deviceNames[device]+" · "+action.toUpperCase().replace(/-/g," ");
+    const slot=document.createElement("section");slot.className="slot-editor";slot.dataset.device=device;
+    const head=document.createElement("div");head.className="slot-head";head.textContent=deviceNames[device];
+    const status=document.createElement("span");status.className="slot-empty";status.textContent=command?"Terisi":"Belum ada kode";head.appendChild(status);
+    const fields=document.createElement("div");fields.className="slot-fields";
+    const type=document.createElement("select");type.className="slot-type";
+    [["raw","RAW"],["nec","NEC"]].forEach(function(pair){const o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];type.appendChild(o);});
+    type.value=command&&command.type?command.type.toLowerCase():"raw";
+    const khz=document.createElement("input");khz.type="number";khz.min="1";khz.max="100";khz.value=command&&command.khz?command.khz:38;khz.className="slot-khz";khz.placeholder="kHz";khz.style.cssText="background:#0b1421;color:#f4f7fc;border:1px solid #344861;border-radius:8px;padding:8px";
+    const length=document.createElement("input");length.type="number";length.min="1";length.max="64";length.value=command&&command.length?command.length:32;length.className="slot-length";length.placeholder="Bit";length.style.cssText=khz.style.cssText;
+    const data=document.createElement("textarea");data.className="slot-data";data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":"Kode NEC hexadecimal";data.value=commandText(command);
+    const clear=document.createElement("button");clear.type="button";clear.textContent="Kosongkan slot";clear.style.cssText="grid-column:1/-1;background:#34202b;color:#ffdce3;border:1px solid #704052;border-radius:8px;padding:8px";
+    clear.addEventListener("click",function(){data.value="";status.textContent="Kosong";});
+    fields.appendChild(type);fields.appendChild(type.value==="raw"?khz:length);fields.appendChild(data);fields.appendChild(clear);
+    type.addEventListener("change",function(){fields.replaceChild(type.value==="raw"?khz:length,fields.children[1]);data.placeholder=type.value==="raw"?"Durasi RAW dipisahkan koma":"Kode NEC hexadecimal";});
+    slot.appendChild(head);slot.appendChild(fields);keymapSlots.appendChild(slot);
+    document.getElementById("keymapStatus").textContent="Perubahan hanya untuk "+deviceNames[device]+" pada tombol ini.";
     keymapModal.classList.add("open");
   }
   async function saveKeymap(){
-    const updated = Object.assign({},keymapOverrides);
-    const slots = {};
-    for(const slot of keymapSlots.querySelectorAll(".slot-editor")){
-      const device=slot.dataset.device;
-      const type=slot.querySelector(".slot-type").value;
-      const rawText=slot.querySelector(".slot-data").value.trim();
-      if(!rawText){slots[device]=null;continue;}
-      if(type==="raw"){
-        const values=rawText.split(/[\s,]+/).filter(Boolean).map(Number);
-        if(!values.length || values.some(v=>!Number.isFinite(v)||v<=0||v>65535||!Number.isInteger(v))){
-          document.getElementById("keymapStatus").textContent="RAW harus berupa angka durasi positif, dipisahkan koma.";
-          return;
-        }
-        slots[device]={type:"raw",data:values,khz:Number(slot.querySelector(".slot-khz").value)||38,out:1};
-      }else{
-        const hex=rawText.replace(/^0x/i,"").replace(/\s/g,"");
-        if(!/^[0-9a-f]+$/i.test(hex)){
-          document.getElementById("keymapStatus").textContent="Kode NEC harus berupa hexadecimal.";
-          return;
-        }
-        slots[device]={type:"nec",data:hex.toUpperCase(),length:Number(slot.querySelector(".slot-length").value)||32,out:1};
-      }
+    const updated=Object.assign({},keymapOverrides);
+    const slot=keymapSlots.querySelector(".slot-editor");
+    if(!slot)return;
+    const device=slot.dataset.device,type=slot.querySelector(".slot-type").value,rawText=slot.querySelector(".slot-data").value.trim();
+    const slots=Object.assign({},updated[editingAction]||{});
+    if(!rawText){slots[device]=null;}
+    else if(type==="raw"){
+      const values=rawText.split(/[\\s,]+/).filter(Boolean).map(Number);
+      if(!values.length||values.some(v=>!Number.isFinite(v)||v<=0||v>65535||!Number.isInteger(v))){document.getElementById("keymapStatus").textContent="RAW harus berupa angka durasi positif, dipisahkan koma.";return;}
+      slots[device]={type:"raw",data:values,khz:Number(slot.querySelector(".slot-khz").value)||38,out:1};
+    }else{
+      const hex=rawText.replace(/^0x/i,"").replace(/\\s/g,"");
+      if(!/^[0-9a-f]+$/i.test(hex)){document.getElementById("keymapStatus").textContent="Kode NEC harus berupa hexadecimal.";return;}
+      slots[device]={type:"nec",data:hex.toUpperCase(),length:Number(slot.querySelector(".slot-length").value)||32,out:1};
     }
     updated[editingAction]=slots;
     try{
       const response=await fetch("/api/keymap"+passQuery(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(updated)});
-      if(!response.ok) throw new Error("HTTP "+response.status);
-      keymapOverrides=updated;
-      keymapModal.classList.remove("open");
-      notify("Keymap tersimpan");
-    }catch(error){
-      document.getElementById("keymapStatus").textContent="Gagal menyimpan keymap: "+error.message;
-    }
+      if(!response.ok)throw new Error("HTTP "+response.status);
+      keymapOverrides=updated;keymapModal.classList.remove("open");notify("Keymap tersimpan");
+    }catch(error){document.getElementById("keymapStatus").textContent="Gagal menyimpan keymap: "+error.message;}
   }
 
   const toast = document.getElementById("toast");
@@ -439,11 +408,12 @@
     const commands = actionCommands(action);
     if(!commands.length){notify("Kode tombol belum tersedia",true);return;}
     busy = true;
-    document.querySelectorAll(".key").forEach(function(key){key.disabled=true;});
+    const keyButtons=Array.from(document.querySelectorAll(".key"));
+    const disabledBefore=keyButtons.map(function(key){return key.disabled;});
+    keyButtons.forEach(function(key){key.disabled=true;});
     if(button) button.classList.add("sending");
     try{
-      // Send each device command in its own request. Mixed RAW+NEC arrays could
-      // leave later device commands unreliable on the ESP8266 transmitter path.
+      // Only the selected remote receives this command.
       for(const command of commands){
         const params = new URLSearchParams();
         params.set("plain",JSON.stringify([command]));
@@ -452,12 +422,12 @@
         const response = await fetch("/json?"+params.toString(),{method:"GET",cache:"no-store"});
         if(!response.ok) throw new Error("HTTP "+response.status);
       }
-      notify("Perintah dikirim · "+commands.length+" sinyal");
+      notify("Perintah dikirim · "+deviceNames[selectedDevice]);
     }catch(error){
       notify("Gagal mengirim perintah: "+error.message,true);
     }finally{
       busy = false;
-      document.querySelectorAll(".key").forEach(function(key){key.disabled=false;});
+      keyButtons.forEach(function(key,index){key.disabled=disabledBefore[index];});
       if(button) button.classList.remove("sending");
     }
   }
@@ -469,6 +439,9 @@
     transmit(button.dataset.action,button);
   });
 
+  document.getElementById("remoteSelect").addEventListener("change",function(){selectedDevice=this.value;updateRemoteLabels();});
+  updateRemoteLabels();
+
   document.getElementById("editKeymapToggle").addEventListener("click",function(){
     editKeymapMode=!editKeymapMode;
     this.classList.toggle("active",editKeymapMode);
@@ -479,7 +452,7 @@
   document.getElementById("keymapSave").addEventListener("click",saveKeymap);
   document.getElementById("keymapClear").addEventListener("click",function(){
     keymapSlots.querySelectorAll(".slot-data").forEach(function(field){field.value="";});
-    document.getElementById("keymapStatus").textContent="Semua slot pada tombol ini akan dikosongkan.";
+    document.getElementById("keymapStatus").textContent="Slot remote aktif akan dikosongkan.";
   });
   loadKeymap();
 
