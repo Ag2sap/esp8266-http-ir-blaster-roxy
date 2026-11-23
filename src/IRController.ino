@@ -909,7 +909,21 @@ void setup() {
             String addressString = root[x]["address"];
             long address = strtoul(addressString.c_str(), 0, 0);
             int len = root[x]["length"];
-            irblast(type, data, len, rdelay, pulse, pdelay, repeat, address, pickIRsend(xout));
+            // HG680P NEC command shorthand: command byte (e.g. 0x4A) ->
+            // address 0x00, inverse address 0xFF, command, inverse command.
+            // The explicit flag keeps ordinary NEC frames fully compatible.
+            bool hgNecCommand = root[x]["hgnec"] | false;
+            if (type == "nec" && hgNecCommand) {
+              uint8_t command = (uint8_t)strtoul(data.c_str(), NULL, 16);
+              uint32_t frame = 0x00FF0000UL |
+                               ((uint32_t)command << 8) |
+                               (uint8_t)(~command);
+              irblast("nec", String(frame, HEX), 32, rdelay, pulse, pdelay,
+                      repeat, address, pickIRsend(xout));
+            } else {
+              irblast(type, data, len, rdelay, pulse, pdelay, repeat, address,
+                      pickIRsend(xout));
+            }
           }
         }
 
@@ -1873,5 +1887,6 @@ void loop() {
     digitalWrite(ledpin, LOW);                                    // Turn on the LED for 0.5 seconds
     ticker.attach(0.5, disableLed);
   }
-  delay(200);
+  // Poll IR and HTTP frequently; delay(1) yields to the ESP8266 Wi-Fi/WDT tasks.
+  delay(1);
 }
