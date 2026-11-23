@@ -55,6 +55,29 @@
     .number-grid .key{min-height:49px;font-size:17px}
     .media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
     .media-grid .key{min-height:45px;font-size:11px}
+    .transport-grid{margin-top:17px;grid-template-columns:repeat(3,1fr)}
+    .transport-grid .key{min-height:54px}
+    .transport-grid .icon-key{gap:3px}
+    .transport-grid .icon-key svg{width:23px;height:23px}
+    .transport-grid .icon-key svg+svg{margin-left:-5px}
+    .edit-bar{display:flex;gap:8px;margin-top:14px}
+    .edit-toggle{flex:1;border:1px solid #36536c;background:#13283a;color:#bdeeff;border-radius:12px;padding:10px;font-size:12px;font-weight:750}
+    .edit-toggle.active{background:#24506a;border-color:#4b9bc0}
+    .keymap-modal{display:none;position:fixed;inset:0;z-index:10;background:#050912d9;padding:18px;overflow:auto;align-items:center;justify-content:center}
+    .keymap-modal.open{display:flex}
+    .keymap-card{width:min(100%,460px);max-height:90vh;overflow:auto;background:#121d2d;border:1px solid #36506c;border-radius:20px;padding:17px;box-shadow:var(--shadow)}
+    .keymap-card h2{font-size:17px;margin:0 0 6px}
+    .keymap-help{font-size:12px;color:var(--muted);margin:0 0 13px}
+    .slot-editor{border:1px solid #2b3d54;border-radius:13px;padding:11px;margin:9px 0}
+    .slot-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:750}
+    .slot-fields{display:grid;grid-template-columns:95px 1fr;gap:8px}
+    .slot-fields select,.slot-fields textarea{width:100%;background:#0b1421;color:var(--text);border:1px solid #344861;border-radius:8px;padding:8px;font:12px system-ui}
+    .slot-fields textarea{min-height:65px;resize:vertical;grid-column:1/-1}
+    .slot-empty{font-size:11px;color:var(--muted)}
+    .modal-actions{display:flex;gap:8px;margin-top:14px}
+    .modal-actions button{flex:1;border:1px solid #36516c;border-radius:10px;padding:11px;background:#1a3045;color:var(--text);font-weight:700}
+    .modal-actions .cancel{background:#172131}
+    .keymap-status{font-size:11px;color:var(--muted);margin-top:8px}
     .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,16px);opacity:0;pointer-events:none;z-index:5;width:max-content;max-width:calc(100vw - 32px);padding:11px 15px;border-radius:12px;background:#17283a;border:1px solid #36516c;color:#eaf6ff;font-size:13px;font-weight:650;box-shadow:var(--shadow);transition:opacity .18s,transform .18s}
     .toast.show{opacity:1;transform:translate(-50%,0)}
     .toast.error{background:#3b202b;border-color:#854052;color:#ffe2e7}
@@ -74,7 +97,7 @@
 
   <section class="remote" aria-label="Remote universal Roxy">
     <div class="device-line" aria-label="Perangkat yang dikendalikan">
-      <span class="device-chip">TV POLYTRON</span>
+      <span class="device-chip">TV</span>
       <span class="device-chip">HG680P</span>
       <span class="device-chip">MATRIX</span>
     </div>
@@ -84,9 +107,9 @@
         <svg viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M5.6 5.6a9 9 0 1 0 12.8 0"/></svg>
         POWER ALL
       </button>
-      <button class="key soft" data-action="mute" aria-label="Mute HG680P">
+      <button class="key soft" data-action="mute" aria-label="Mute">
         <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m17 9 5 6m0-6-5 6"/></svg>
-        MUTE · HG680P
+        MUTE
       </button>
     </div>
 
@@ -120,6 +143,17 @@
       <button class="key secondary soft" data-action="epg">EPG</button>
     </div>
 
+    <div class="media-grid transport-grid" aria-label="Kontrol multimedia">
+      <button class="key secondary soft icon-key" data-action="rewind" aria-label="Rewind" title="Rewind"><svg viewBox="0 0 24 24"><path d="M11 5 3 12l8 7V5Zm10 0-8 7 8 7V5Z"/></svg></button>
+      <button class="key secondary soft icon-key" data-action="play-pause" aria-label="Play/Pause" title="Play/Pause"><svg viewBox="0 0 24 24"><path d="M6 4v16l12-8L6 4Z"/></svg><svg viewBox="0 0 24 24"><path d="M7 5v14M17 5v14"/></svg></button>
+      <button class="key secondary soft icon-key" data-action="fast-forward" aria-label="Fast Forward" title="Fast Forward"><svg viewBox="0 0 24 24"><path d="m3 5 8 7-8 7V5Zm10 0 8 7-8 7V5Z"/></svg></button>
+      <button class="key secondary soft icon-key" data-action="before" aria-label="Previous" title="Previous"><svg viewBox="0 0 24 24"><path d="M5 5v14M19 5l-10 7 10 7V5Z"/></svg></button>
+      <button class="key secondary soft icon-key" data-action="stop" aria-label="Stop" title="Stop"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg></button>
+      <button class="key secondary soft icon-key" data-action="next" aria-label="Next" title="Next"><svg viewBox="0 0 24 24"><path d="M19 5v14M5 5l10 7-10 7V5Z"/></svg></button>
+    </div>
+
+    <div class="edit-bar"><button class="edit-toggle" id="editKeymapToggle" type="button">Atur Keymap</button></div>
+
     <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false" aria-controls="morePanel">
       <span class="plus" id="toggleIcon">+</span>
       <span id="toggleText">Tampilkan tombol lainnya</span>
@@ -145,12 +179,6 @@
         <button class="key secondary soft" data-action="channel-down">CH −</button>
         <button class="key secondary soft" data-action="channel-up">CH +</button>
         <button class="key secondary soft" data-action="recall">RECALL</button>
-        <button class="key secondary soft" data-action="rewind">REW</button>
-        <button class="key secondary soft" data-action="play-pause">PLAY / PAUSE</button>
-        <button class="key secondary soft" data-action="fast-forward">FF</button>
-        <button class="key secondary soft" data-action="stop">STOP</button>
-        <button class="key secondary soft" data-action="before">BEFORE</button>
-        <button class="key secondary soft" data-action="next">NEXT</button>
         <button class="key secondary soft" data-action="txt">TXT</button>
         <button class="key secondary soft" data-action="set" disabled title="RAW SET belum tersedia">SET*</button>
         <button class="key secondary soft" data-action="app">APP</button>
@@ -158,6 +186,19 @@
     </div>
   </section>
 </main>
+<div class="keymap-modal" id="keymapModal" role="dialog" aria-modal="true" aria-labelledby="keymapTitle">
+  <div class="keymap-card">
+    <h2 id="keymapTitle">Atur Keymap</h2>
+    <p class="keymap-help" id="keymapHelp">Pilih kode untuk setiap perangkat. Slot kosong tidak mengirim sinyal.</p>
+    <div id="keymapSlots"></div>
+    <div class="modal-actions">
+      <button type="button" class="cancel" id="keymapCancel">Batal</button>
+      <button type="button" id="keymapClear">Kosongkan semua</button>
+      <button type="button" id="keymapSave">Simpan</button>
+    </div>
+    <div class="keymap-status" id="keymapStatus" aria-live="polite"></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
