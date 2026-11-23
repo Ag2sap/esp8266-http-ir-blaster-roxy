@@ -698,6 +698,78 @@ void setup() {
     server->send(200, "application/json", payload);
   });
 
+  // Persistent per-button keymap storage for the Roxy WebUI.
+  server->on("/api/keymap", HTTP_GET, []() {
+    IPAddress remoteIP = server->client().remoteIP();
+    if (!allowLocalBypass(remoteIP) && !isPasscodeValid(server->arg("pass"))) {
+      sendCorsHeaders();
+      server->send(401, "application/json", "{\\"error\\":\\"unauthorized\\"}");
+      return;
+    }
+    if (strlen(user_id) != 0 && !validateHMAC(server->arg("epid"), server->arg("mid"),
+        server->arg("time"), server->arg("auth"), remoteIP)) {
+      sendCorsHeaders();
+      server->send(401, "application/json", "{\\"error\\":\\"hmac\\\"}");
+      return;
+    }
+
+    if (!LittleFS.exists("/keymap.json")) {
+      sendCorsHeaders();
+      server->send(200, "application/json", "{}");
+      return;
+    }
+    File keymapFile = LittleFS.open("/keymap.json", "r");
+    if (!keymapFile) {
+      sendCorsHeaders();
+      server->send(500, "application/json", "{\\"error\\":\\"read_failed\\"}");
+      return;
+    }
+    String payload = keymapFile.readString();
+    keymapFile.close();
+    sendCorsHeaders();
+    server->send(200, "application/json", payload);
+  });
+
+  server->on("/api/keymap", HTTP_POST, []() {
+    IPAddress remoteIP = server->client().remoteIP();
+    if (!allowLocalBypass(remoteIP) && !isPasscodeValid(server->arg("pass"))) {
+      sendCorsHeaders();
+      server->send(401, "application/json", "{\\"error\\":\\"unauthorized\\"}");
+      return;
+    }
+    if (strlen(user_id) != 0 && !validateHMAC(server->arg("epid"), server->arg("mid"),
+        server->arg("time"), server->arg("auth"), remoteIP)) {
+      sendCorsHeaders();
+      server->send(401, "application/json", "{\\"error\\":\\"hmac\\"}");
+      return;
+    }
+
+    DynamicJsonDocument keymapDoc(16384);
+    DeserializationError error = deserializeJson(keymapDoc, server->arg("plain"));
+    if (error || !keymapDoc.is<JsonObject>()) {
+      sendCorsHeaders();
+      server->send(400, "application/json", "{\\"error\\":\\"invalid_json\\"}");
+      return;
+    }
+
+    File tempFile = LittleFS.open("/keymap.tmp", "w");
+    if (!tempFile) {
+      sendCorsHeaders();
+      server->send(500, "application/json", "{\\"error\\":\\"open_failed\\"}");
+      return;
+    }
+    size_t written = serializeJson(keymapDoc, tempFile);
+    tempFile.close();
+    if (written == 0 || !LittleFS.rename("/keymap.tmp", "/keymap.json")) {
+      LittleFS.remove("/keymap.tmp");
+      sendCorsHeaders();
+      server->send(500, "application/json", "{\\"error\\":\\"write_failed\\"}");
+      return;
+    }
+    sendCorsHeaders();
+    server->send(200, "application/json", "{\\"saved\\":true}");
+  });
+
   // Configure the server
   server->on("/json", []() { // JSON handler for more complicated IR blaster routines
     Serial.println("Connection received endpoint '/json'");
