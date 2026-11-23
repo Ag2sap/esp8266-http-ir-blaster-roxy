@@ -377,11 +377,11 @@
     const slots=Object.assign({},updated[editingAction]||{});
     if(!rawText){slots[device]=null;}
     else if(type==="raw"){
-      const values=rawText.split(/[\\s,]+/).filter(Boolean).map(Number);
+      const values=rawText.split(/[\s,]+/).filter(Boolean).map(Number);
       if(!values.length||values.some(v=>!Number.isFinite(v)||v<=0||v>65535||!Number.isInteger(v))){document.getElementById("keymapStatus").textContent="RAW harus berupa angka durasi positif, dipisahkan koma.";return;}
       slots[device]={type:"raw",data:values,khz:Number(slot.querySelector(".slot-khz").value)||38,out:1};
     }else{
-      const hex=rawText.replace(/^0x/i,"").replace(/\\s/g,"");
+      const hex=rawText.replace(/^0x/i,"").replace(/\s/g,"");
       if(!/^[0-9a-f]+$/i.test(hex)){document.getElementById("keymapStatus").textContent="Kode NEC harus berupa hexadecimal.";return;}
       let storedHex=hex.toUpperCase();
       let hgNecCommand=false;
