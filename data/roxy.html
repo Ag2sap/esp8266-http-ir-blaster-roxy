@@ -295,6 +295,7 @@
     "txt":["hg"], "set":["hg"], "app":["hg"]
   };
   Object.keys(CODES.hg.digits).forEach(function(d){ACTION_DEVICES["digit-"+d]=["hg","matrix"];});
+  const ALL_DEVICES = ["tv","hg","matrix"];
   let keymapOverrides = {};
   let editKeymapMode = false;
   let editingAction = "";
@@ -304,12 +305,13 @@
     return pass ? "?pass="+encodeURIComponent(pass) : "";
   }
   function actionCommands(action){
-    const devices = ACTION_DEVICES[action] || [];
+    const defaultDevices = ACTION_DEVICES[action] || [];
     const base = (ACTIONS[action] ? ACTIONS[action]() : []);
-    return devices.map(function(device,index){
+    return ALL_DEVICES.map(function(device){
       if(keymapOverrides[action] && Object.prototype.hasOwnProperty.call(keymapOverrides[action],device))
         return keymapOverrides[action][device];
-      return base[index] || null;
+      const defaultIndex = defaultDevices.indexOf(device);
+      return defaultIndex >= 0 ? (base[defaultIndex] || null) : null;
     }).filter(Boolean);
   }
   async function loadKeymap(){
@@ -333,14 +335,15 @@
   }
   function openKeymapEditor(action){
     editingAction = action;
-    const devices = ACTION_DEVICES[action] || [];
-    const current = actionCommands(action);
+    const defaultDevices = ACTION_DEVICES[action] || [];
+    const devices = ALL_DEVICES;
     const original = (ACTIONS[action] ? ACTIONS[action]() : []);
     keymapSlots.innerHTML = "";
     document.getElementById("keymapTitle").textContent = "Keymap · "+action.toUpperCase().replace(/-/g," ");
     devices.forEach(function(device,index){
+      const defaultIndex = defaultDevices.indexOf(device);
       const command = keymapOverrides[action] && Object.prototype.hasOwnProperty.call(keymapOverrides[action],device)
-        ? keymapOverrides[action][device] : (original[index] || null);
+        ? keymapOverrides[action][device] : (defaultIndex >= 0 ? (original[defaultIndex] || null) : null);
       const slot = document.createElement("section");
       slot.className = "slot-editor";
       slot.dataset.device = device;
